@@ -66,11 +66,11 @@ export class HoverProvider implements vscode.HoverProvider {
 		if (word.includes(".")) {
 			const num = parseFloat(word);
 			if (isNaN(num)) { return null; }
-			const double_hex = '0x' + double2Hex(num);
 			const float_hex = '0x' + float2Hex(num);
+			const double_hex = '0x' + double2Hex(num);
 			const hoverText = new vscode.MarkdownString(
-				`**double**: \`${double_hex}\`\n\n` +
-			 	`**single**: \`${float_hex}\`\n\n`);
+				`**single**: \`${float_hex}\`\n\n` +
+			 	`**double**: \`${double_hex}\`\n\n`);
 				 return new vscode.Hover(hoverText);
 		}
 		if (word.startsWith("0x")) {

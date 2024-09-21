@@ -13,6 +13,7 @@
     "type": "git",
     "url": "https://github.com/OfekShilon/num2hex"
   },
+  "publisher": "ofekshilon",
   "activationEvents": [ "onStartupFinished" ],
   "main": "./out/extension.js",
   "contributes": {
@@ -41,5 +42,6 @@
     "typescript": "^5.5.4",
     "@vscode/test-cli": "^0.0.10",
     "@vscode/test-electron": "^2.4.1"
-  }
+  },
+  "icon": "num2hex.png"
 }

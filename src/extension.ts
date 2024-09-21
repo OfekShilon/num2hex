@@ -26,7 +26,7 @@ function float2Hex(float: number): string | null {
 	// check if within range and exactly representable. Not sure about this feature.
 	const testNum = view.getFloat32(0, false);
 	if (testNum !== float) {
-	  hex += ' (not exact)'
+		hex += ' (not exact)';
 	}
 	return hex;
   }
@@ -60,12 +60,12 @@ export class HoverProvider implements vscode.HoverProvider {
 	provideHover(document: vscode.TextDocument, position: vscode.Position): vscode.Hover | null {
 	  
 	  	const wordRange = document.getWordRangeAtPosition(position);
-		if (!wordRange) return null;
+		if (!wordRange) { return null; }
   
 	  	const word = document.getText(wordRange);
 		if (word.includes(".")) {
 			const num = parseFloat(word);
-			if (isNaN(num)) return null;
+			if (isNaN(num)) { return null; }
 			const double_hex = '0x' + double2Hex(num);
 			const float_hex = '0x' + float2Hex(num);
 			const hoverText = new vscode.MarkdownString(
@@ -91,7 +91,7 @@ export class HoverProvider implements vscode.HoverProvider {
 		}
 
 		const num = parseInt(word, 10);
-		if (isNaN(num)) return null;
+		if (isNaN(num)) { return null; }
 		const binary = '0b' + num.toString(2);
 		const hex = '0x' + num.toString(16);
 		const hoverText = new vscode.MarkdownString(

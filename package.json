@@ -13,7 +13,7 @@
     "type": "git",
     "url": "https://github.com/OfekShilon/num2hex"
   },
-  "activationEvents": [ "*" ],
+  "activationEvents": [ "onStartupFinished" ],
   "main": "./out/extension.js",
   "contributes": {
     "hoverProvider": {
@@ -21,7 +21,7 @@
     }
   },
   "languages": [
-    "onLanguage:*"
+    "*"
   ],
   "scripts": {
     "vscode:prepublish": "npm run compile",

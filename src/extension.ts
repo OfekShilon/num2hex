@@ -31,6 +31,31 @@ function float2Hex(float: number): string | null {
 	return hex;
   }
 
+
+function hex4_to_nums(hex: string): [number, number, number] {
+	const buffer = new ArrayBuffer(4);
+	const view = new DataView(buffer);
+	const num = parseInt(hex, 16);
+	view.setUint32(0, num, false); // big-endian
+	  
+	const int32 = view.getInt32(0, false);
+	const uint32 = view.getUint32(0, false);
+	const float32 = view.getFloat32(0, false);
+	return [int32, uint32, float32];
+  }
+
+  function hex8_to_nums(hex: string): [number, number, number] {
+	const buffer = new ArrayBuffer(8);
+	const view = new DataView(buffer);
+	const num = BigInt(hex);
+	view.setBigUint64(0, num, false); // big-endian
+  
+	  const int64 = Number(view.getBigInt64(0, false));
+	  const uint64 = Number(view.getBigUint64(0, false));
+	const float64 = view.getFloat64(0, false);
+	return [int64, uint64, float64];
+  }
+
 export class HoverProvider implements vscode.HoverProvider {
 	provideHover(document: vscode.TextDocument, position: vscode.Position): vscode.Hover | null {
 	  
@@ -45,10 +70,25 @@ export class HoverProvider implements vscode.HoverProvider {
 			const float_hex = '0x' + float2Hex(num);
 			const hoverText = new vscode.MarkdownString(
 				`**double**: \`${double_hex}\`\n\n` +
-			 	`**single**: \`${float_hex}\``);
+			 	`**single**: \`${float_hex}\`\n\n`);
 				 return new vscode.Hover(hoverText);
 		}
-
+		if (word.startsWith("0x")) {
+			if (word.length <= 10) {
+				const [int32, uint32, float32] = hex4_to_nums(word);
+				const hoverText = new vscode.MarkdownString(
+					`**int32**: \`${int32}\`\n\n` +
+					`**uint32**: \`${uint32}\`\n\n` +
+					`**double**: \`${float32}\``);
+				return new vscode.Hover(hoverText);
+			}
+			const [int64, uint64, double] = hex8_to_nums(word);
+			const hoverText = new vscode.MarkdownString(
+				`**int64**: \`${int64}\`\n\n` +
+				`**uint64**: \`${uint64}\`\n\n` +
+				`**double**: \`${double}\``);
+			return new vscode.Hover(hoverText);
+		}
 
 		const num = parseInt(word, 10);
 		if (isNaN(num)) return null;

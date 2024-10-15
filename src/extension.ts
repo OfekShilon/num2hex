@@ -50,56 +50,81 @@ function hex4_to_nums(hex: string): [number, number, number] {
 	const num = BigInt(hex);
 	view.setBigUint64(0, num, false); // big-endian
   
-	  const int64 = Number(view.getBigInt64(0, false));
-	  const uint64 = Number(view.getBigUint64(0, false));
+	const int64 = Number(view.getBigInt64(0, false));
+	const uint64 = Number(view.getBigUint64(0, false));
 	const float64 = view.getFloat64(0, false);
 	return [int64, uint64, float64];
   }
 
-export class HoverProvider implements vscode.HoverProvider {
-	provideHover(document: vscode.TextDocument, position: vscode.Position): vscode.Hover | null {
-	  
-	  	const wordRange = document.getWordRangeAtPosition(position);
-		if (!wordRange) { return null; }
-  
-	  	const word = document.getText(wordRange);
-		if (word.includes(".")) {
-			const num = parseFloat(word);
-			if (isNaN(num)) { return null; }
-			const float_hex = '0x' + float2Hex(num);
-			const double_hex = '0x' + double2Hex(num);
-			const hoverText = new vscode.MarkdownString(
-				`**single**: \`${float_hex}\`\n\n` +
-			 	`**double**: \`${double_hex}\`\n\n`);
-				 return new vscode.Hover(hoverText);
-		}
-		if (word.startsWith("0x")) {
-			if (word.length <= 10) {
-				const [int32, uint32, float32] = hex4_to_nums(word);
-				const hoverText = new vscode.MarkdownString(
-					`**int32**: \`${int32}\`\n\n` +
-					`**uint32**: \`${uint32}\`\n\n` +
-					`**double**: \`${float32}\``);
-				return new vscode.Hover(hoverText);
-			}
-			const [int64, uint64, double] = hex8_to_nums(word);
-			const hoverText = new vscode.MarkdownString(
-				`**int64**: \`${int64}\`\n\n` +
-				`**uint64**: \`${uint64}\`\n\n` +
-				`**double**: \`${double}\``);
-			return new vscode.Hover(hoverText);
-		}
+  function handleHex(document: vscode.TextDocument, hexRange: vscode.Range): vscode.Hover {
+	const hexWord = document.getText(hexRange);
+	if (hexWord.length <= 10) {
+		const [int32, uint32, float32] = hex4_to_nums(hexWord);
+		const hoverText = new vscode.MarkdownString(
+			`**int32**: \`${int32}\`\n\n` +
+			`**uint32**: \`${uint32}\`\n\n` +
+			`**double**: \`${float32}\``);
+		return new vscode.Hover(hoverText);
+	}
+	const [int64, uint64, double] = hex8_to_nums(hexWord);
+	const hoverText = new vscode.MarkdownString(
+		`**int64**: \`${int64}\`\n\n` +
+		`**uint64**: \`${uint64}\`\n\n` +
+		`**double**: \`${double}\``);
+	return new vscode.Hover(hoverText);
+  }
 
-		const num = parseInt(word, 10);
+	function handleFloat(document: vscode.TextDocument, floatRange: vscode.Range): vscode.Hover | null {
+		
+		const floatWord = document.getText(floatRange);
+		const num = parseFloat(floatWord);
 		if (isNaN(num)) { return null; }
+		const float_hex = '0x' + float2Hex(num);
+		const double_hex = '0x' + double2Hex(num);
+		const hoverText = new vscode.MarkdownString(
+			`**single**: \`${float_hex}\`\n\n` +
+			`**double**: \`${double_hex}\`\n\n`);
+		return new vscode.Hover(hoverText);
+	}
+
+	function handleInt(document: vscode.TextDocument, intRange: vscode.Range): vscode.Hover | null {
+		const intWord = document.getText(intRange);
+		let num = parseInt(intWord, 10);
+		if (isNaN(num)) { return null; }
+		if (num < 0) { 
+			num = 0xFFFFFFFF + num + 1;
+		}
 		const binary = '0b' + num.toString(2);
 		const hex = '0x' + num.toString(16);
 		const hoverText = new vscode.MarkdownString(
 			`**hex**: \`${hex}\`\n\n` +
-			`**binary**: \`${binary}\``);
+			`**bin**: \`${binary}\``);
 		return new vscode.Hover(hoverText);
 	}
-  }
+	
+export class HoverProvider implements vscode.HoverProvider {
+
+
+	provideHover(document: vscode.TextDocument, position: vscode.Position): vscode.Hover | null {
+	  
+		const hexRange = document.getWordRangeAtPosition(position, /0x[0-9a-fA-F]+/);
+		if (hexRange) {
+			return handleHex(document, hexRange);
+		}
+
+		const floatRange = document.getWordRangeAtPosition(position, /-?\d+\.\d*/);
+		if (floatRange) {
+			return handleFloat(document, floatRange);
+		}
+		
+		const intRange = document.getWordRangeAtPosition(position, /-?\d+/);
+		if (intRange) {
+			return handleInt(document, intRange);
+		}
+
+		return null;
+	}
+}
 
 export function activate(context: vscode.ExtensionContext) {
 //   console.log("hi from num2hex extension");

@@ -63,7 +63,7 @@ function hex4_to_nums(hex: string): [number, number, number] {
 		const hoverText = new vscode.MarkdownString(
 			`**int32**: \`${int32}\`\n\n` +
 			`**uint32**: \`${uint32}\`\n\n` +
-			`**double**: \`${float32}\``);
+			`**float**: \`${float32}\``);
 		return new vscode.Hover(hoverText);
 	}
 	const [int64, uint64, double] = hex8_to_nums(hexWord);

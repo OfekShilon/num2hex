@@ -1,10 +1,8 @@
 # num2hex vscode extension
 
-Display a hover-text that translates numbers to hex or binary, and hex to numbers.
+Display a hover-text that translates and hex to numbers and vice versa.
 
 ![Demo](./num2hex.gif)
 
-
-Initial release, version: 0.0.1
 
 Licensed under the [MIT](./LICENSE) License.

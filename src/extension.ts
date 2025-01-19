@@ -1,5 +1,9 @@
 import * as vscode from 'vscode';
 
+function addSpaceBeforeEvery4CharsFromEnd(input: string): string {
+    return input.replace(/(.{1,4})(?=(.{4})+$)/g, '$1 ');
+}
+
 function double2Hex(double: number): string {
 	const buffer = new ArrayBuffer(8); // 8 bytes for a double precision float
 	const view = new DataView(buffer);
@@ -29,7 +33,7 @@ function float2Hex(float: number): string | null {
 		hex += ' (not exact)';
 	}
 	return hex;
-  }
+}
 
 
 function hex4_to_nums(hex: string): [number, number, number, string] {
@@ -41,11 +45,11 @@ function hex4_to_nums(hex: string): [number, number, number, string] {
 	const int32 = view.getInt32(0, false);
 	const uint32 = view.getUint32(0, false);
 	const float32 = view.getFloat32(0, false);
-	const bin32 = '0b' + num.toString(2);
+	const bin32 = addSpaceBeforeEvery4CharsFromEnd(num.toString(2));
 	return [int32, uint32, float32, bin32];
-  }
+}
 
-  function hex8_to_nums(hex: string): [number, number, number, string] {
+function hex8_to_nums(hex: string): [number, number, number, string] {
 	const buffer = new ArrayBuffer(8);
 	const view = new DataView(buffer);
 	const num = BigInt(hex);
@@ -54,11 +58,11 @@ function hex4_to_nums(hex: string): [number, number, number, string] {
 	const int64 = Number(view.getBigInt64(0, false));
 	const uint64 = Number(view.getBigUint64(0, false));
 	const float64 = view.getFloat64(0, false);
-	const bin64 = '0b' + num.toString(2);
+	const bin64 = addSpaceBeforeEvery4CharsFromEnd(num.toString(2));
 	return [int64, uint64, float64, bin64];
-  }
+}
 
-  function handleHex(document: vscode.TextDocument, hexRange: vscode.Range): vscode.Hover {
+function handleHex(document: vscode.TextDocument, hexRange: vscode.Range): vscode.Hover {
 	const hexWord = document.getText(hexRange);
 	if (hexWord.length <= 10) {
 		const [int32, uint32, float32, bin32] = hex4_to_nums(hexWord);
@@ -76,35 +80,51 @@ function hex4_to_nums(hex: string): [number, number, number, string] {
 		`**double**: \`${double}\`\n\n`  +
 		`**bin**: \`${bin64}\``);
 	return new vscode.Hover(hoverText);
-  }
+}
 
-	function handleFloat(document: vscode.TextDocument, floatRange: vscode.Range): vscode.Hover | null {
-		
-		const floatWord = document.getText(floatRange);
-		const num = parseFloat(floatWord);
-		if (isNaN(num)) { return null; }
-		const float_hex = '0x' + float2Hex(num);
-		const double_hex = '0x' + double2Hex(num);
-		const hoverText = new vscode.MarkdownString(
-			`**single**: \`${float_hex}\`\n\n` +
-			`**double**: \`${double_hex}\`\n\n`);
-		return new vscode.Hover(hoverText);
-	}
+function handleFloat(document: vscode.TextDocument, floatRange: vscode.Range): vscode.Hover | null {
+	
+	const floatWord = document.getText(floatRange);
+	const num = parseFloat(floatWord);
+	if (isNaN(num)) { return null; }
+	const float_hex = '0x' + float2Hex(num);
+	const double_hex = '0x' + double2Hex(num);
+	const hoverText = new vscode.MarkdownString(
+		`**single**: \`${float_hex}\`\n\n` +
+		`**double**: \`${double_hex}\`\n\n`);
+	return new vscode.Hover(hoverText);
+}
 
-	function handleInt(document: vscode.TextDocument, intRange: vscode.Range): vscode.Hover | null {
-		const intWord = document.getText(intRange);
-		let num = parseInt(intWord, 10);
-		if (isNaN(num)) { return null; }
-		if (num < 0) { 
-			num = 0xFFFFFFFF + num + 1;
-		}
-		const binary = '0b' + num.toString(2);
-		const hex = '0x' + num.toString(16);
-		const hoverText = new vscode.MarkdownString(
-			`**hex**: \`${hex}\`\n\n` +
-			`**bin**: \`${binary}\``);
-		return new vscode.Hover(hoverText);
+function handleInt(document: vscode.TextDocument, intRange: vscode.Range): vscode.Hover | null {
+	const intWord = document.getText(intRange);
+	let num = parseInt(intWord, 10);
+	if (isNaN(num)) { return null; }
+	if (num < 0) { 
+		num = 0xFFFFFFFF + num + 1;
 	}
+	const binary = addSpaceBeforeEvery4CharsFromEnd(num.toString(2));
+	const hex = '0x' + num.toString(16);
+	const hoverText = new vscode.MarkdownString(
+		`**hex**: \`${hex}\`\n\n` +
+		`**bin**: \`${binary}\``);
+	return new vscode.Hover(hoverText);
+}
+
+function handleSci(document: vscode.TextDocument, sciRange: vscode.Range): vscode.Hover | null {
+	const sciWord = document.getText(sciRange)
+	const parts = sciWord.split(/e|E/);
+	const coeff = parts[0]
+	const exp = parts[1]
+	const num = parseFloat(coeff) * Math.pow(10, parseInt(exp));
+	
+	if (isNaN(num)) { return null; }
+	const float_hex = '0x' + float2Hex(num);
+	const double_hex = '0x' + double2Hex(num);
+	const hoverText = new vscode.MarkdownString(
+		`**single**: \`${float_hex}\`\n\n` +
+		`**double**: \`${double_hex}\`\n\n`);
+	return new vscode.Hover(hoverText);
+}
 	
 export class HoverProvider implements vscode.HoverProvider {
 
@@ -113,6 +133,11 @@ export class HoverProvider implements vscode.HoverProvider {
 		const hexRange = document.getWordRangeAtPosition(position, /0x[0-9a-fA-F]+/);
 		if (hexRange) {
 			return handleHex(document, hexRange);
+		}
+
+		const sciRange = document.getWordRangeAtPosition(position, /-?\d+(\.\d+)?[e|E]-?\d+/);
+		if (sciRange) {
+			return handleSci(document, sciRange);
 		}
 
 		const floatRange = document.getWordRangeAtPosition(position, /-?\d+\.\d*/);
